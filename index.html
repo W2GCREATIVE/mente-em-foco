@@ -1,0 +1,757 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mente em Foco</title>
+<meta name="description" content="Projeto de extensão em Psicologia sobre saúde mental na adolescência.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,500&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Conceito: cada ponto é um adolescente. Um campo de 300 pontos atravessa a apresentação,
+   orbita os anéis de foco da capa e vira os gráficos de 100 pontos dos dados.
+   Tinta índigo + papel lilás, coral como acento principal, lilás, menta e sol como apoio.
+   Títulos em Montserrat Black, caixa-alta e letras espaçadas; dados em DM Mono. */
+:root{
+  --ink:#12163A; --ink2:#1B2150; --ink3:#262E6B; --line:rgba(169,155,255,.22);
+  --paper:#F4F1FA; --paper2:#E8E2F6; --paperLine:rgba(18,22,58,.12);
+  --onInk:#F4F1FA; --muteInk:#B3B2D6; --onPaper:#12163A; --mutePaper:#55588A;
+  --coral:#FF6F59; --lilac:#A99BFF; --mint:#4FD1B0; --sun:#FFD166;
+  --display:"Montserrat","Helvetica Neue",Arial,sans-serif;
+  --body:"Montserrat","Helvetica Neue",Arial,sans-serif;
+  --mono:"DM Mono","SF Mono",ui-monospace,Menlo,monospace;
+  --out:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.2,1.25,.3,1);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--ink);color:var(--onInk);overflow:hidden}
+body{font-family:var(--body);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+h1,h2,h3,p,ul,ol{margin:0;padding:0}
+ul,ol{list-style:none}
+img{display:block;max-width:none}
+svg{display:block}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible{outline:3px solid var(--coral);outline-offset:3px}
+
+/* palco 1920x1080, escalado para caber na janela */
+#bg{position:fixed;inset:0;background:var(--ink);transition:background .6s ease}
+#bg.light{background:var(--paper)}
+#glow{position:fixed;inset:-20%;pointer-events:none;transition:background 1.2s ease;background:radial-gradient(38% 42% at 78% 28%,rgba(169,155,255,.18),transparent 70%)}
+#field{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:50% 50%;transform:translate(-50%,-50%) scale(var(--k,.5))}
+#iris{position:fixed;left:0;top:0;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:var(--ink);transform:scale(0);pointer-events:none;z-index:20}
+
+/* slide */
+.s{position:absolute;inset:0;padding:104px 140px 150px;display:flex;flex-direction:column;gap:44px;visibility:hidden;opacity:0;transition:opacity .4s,visibility 0s .4s;overflow:hidden}
+.s.active{visibility:visible;opacity:1;transition:opacity .4s}
+.s.light{color:var(--onPaper)}
+.r{opacity:1}
+.s.in .r{animation:rise .9s var(--out) both;animation-delay:calc(var(--d,0)*80ms + 150ms)}
+.s.in .pop{animation:pop .6s var(--spring) both;animation-delay:calc(var(--d,0)*70ms + 300ms)}
+@keyframes rise{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* tipografia: 5 tamanhos */
+.eyebrow{display:flex;align-items:center;gap:18px;font-family:var(--mono);font-size:22px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--coral)}
+.eyebrow::before{content:"";width:54px;height:2px;background:currentColor;border-radius:2px}
+h1{font-family:var(--display);font-weight:900;font-size:76px;line-height:1.04;letter-spacing:.06em;text-transform:uppercase;text-wrap:balance}
+h1 em{font-style:normal;color:var(--coral)}
+h3{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.2;letter-spacing:.04em;text-transform:uppercase}
+p,li{font-size:27px;line-height:1.5}
+.lead{font-size:32px;line-height:1.45;font-weight:500}
+.small{font-size:22px;line-height:1.45}
+.mute{color:var(--muteInk)}
+.light .mute{color:var(--mutePaper)}
+.mono{font-family:var(--mono)}
+.big{font-family:var(--display);font-weight:900;letter-spacing:.01em;line-height:1}
+.hd{display:flex;flex-direction:column;gap:20px}
+
+/* rodapé fixo */
+.foot{position:absolute;left:140px;right:140px;bottom:54px;display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:20px;letter-spacing:.14em;text-transform:uppercase;color:var(--muteInk)}
+.light .foot{color:var(--mutePaper)}
+.foot .src{letter-spacing:.02em;text-transform:none}
+.foot b{font-weight:500;color:var(--coral)}
+
+/* elementos de identidade */
+.rings{position:absolute;pointer-events:none}
+.rings circle{fill:none;stroke-width:2}
+.s.in .rings .spin{transform-origin:50% 50%;animation:spin 60s linear infinite}
+.wave{position:absolute;left:0;right:0;pointer-events:none}
+.arch{position:relative;border-radius:999px 999px 56px 56px;overflow:visible}
+.arch img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.arch::after{content:"";position:absolute;inset:-22px;border:2px solid var(--coral);border-radius:999px 999px 76px 76px;pointer-events:none}
+.leaf{border-radius:64px 64px 64px 14px}
+.card{position:relative;background:var(--ink2);border:1px solid var(--line);border-radius:44px 44px 44px 12px;padding:36px 40px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.light .card{background:#fff;border-color:var(--paperLine)}
+.chip{display:inline-flex;align-items:center;gap:12px;padding:12px 24px;border-radius:999px;font-family:var(--mono);font-size:22px;font-weight:500;letter-spacing:.06em;background:rgba(255,111,89,.14);color:var(--coral);width:max-content}
+.chip.lilac{background:rgba(169,155,255,.16);color:var(--lilac)}
+.light .chip.lilac{background:var(--paper2);color:var(--ink3)}
+.ic{width:44px;height:44px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.icb{width:84px;height:84px;border-radius:28px 28px 28px 8px;display:grid;place-items:center;flex:none}
+
+/* ===== capa ===== */
+#s0{padding:0;flex-direction:row;gap:0;color:var(--onPaper)}
+#s0 .left{flex:none;width:1080px;padding:110px 0 120px 150px;display:flex;flex-direction:column;justify-content:space-between;position:relative;z-index:2}
+#s0 .mark{display:flex;align-items:center;gap:20px;font-family:var(--mono);font-size:22px;letter-spacing:.24em;text-transform:uppercase;color:var(--mutePaper)}
+#s0 h1{font-size:150px;line-height:.92;letter-spacing:.05em}
+#s0 h1 span{display:block}
+#s0 .tag{font-size:36px;font-weight:500;line-height:1.35;max-width:820px;margin-top:34px}
+#s0 .meta{display:grid;grid-template-columns:repeat(2,max-content);gap:22px 90px}
+#s0 .meta div{display:flex;flex-direction:column;gap:6px}
+#s0 .meta small{font-family:var(--mono);font-size:19px;letter-spacing:.18em;text-transform:uppercase;color:var(--mutePaper)}
+#s0 .meta b{font-size:26px;font-weight:700}
+#s0 .photo{position:absolute;right:150px;top:120px;width:600px;height:780px}
+#s0 .go{display:inline-flex;align-items:center;gap:14px;padding:18px 30px;border-radius:999px;background:var(--ink);color:var(--paper);font-weight:700;font-size:22px;letter-spacing:.12em;text-transform:uppercase;width:max-content;transition:transform .3s var(--spring),background .2s}
+#s0 .go:hover{transform:scale(1.04);background:var(--coral)}
+
+/* ===== roteiro ===== */
+#route{position:relative;flex:1}
+#route svg.path{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#route path.ln{fill:none;stroke:var(--lilac);stroke-width:3;stroke-dasharray:1;stroke-dashoffset:0}
+.s.in #route path.ln{animation:draw 1.6s var(--out) both;animation-delay:.3s}
+.stop{position:absolute;width:350px;display:flex;flex-direction:column;gap:14px}
+.stop .n{width:92px;height:92px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:900;font-size:34px;letter-spacing:.04em;color:var(--ink);box-shadow:0 0 0 12px var(--ink),0 0 0 14px var(--line)}
+.stop p{font-size:25px;line-height:1.4}
+.stop h3,.stop p{background:var(--ink);padding-right:14px;width:max-content;max-width:100%}
+
+/* ===== waffle ===== */
+.waffles{display:grid;grid-template-columns:repeat(3,1fr);gap:72px;flex:1;align-items:start}
+.wf{display:flex;flex-direction:column;gap:30px}
+.grid{display:grid;grid-template-columns:repeat(10,22px);gap:11px;width:max-content}
+.grid i{width:22px;height:22px;border-radius:50%;background:rgba(179,178,214,.18)}
+.grid i.on{background:var(--c,var(--coral))}
+.s.in .grid i.on{animation:pop .5s var(--spring) both;animation-delay:calc(var(--j)*9ms + 950ms)}
+.wf .num{display:flex;align-items:baseline;gap:14px}
+.wf .num .big{font-size:96px}
+.wf .num span:last-child{font-family:var(--display);font-weight:900;font-size:44px;color:var(--muteInk)}
+
+/* ===== tabelas leves ===== */
+.rowline{display:grid;align-items:center;gap:28px;padding:22px 0;border-top:1px solid var(--line)}
+.rowline:last-child{border-bottom:1px solid var(--line)}
+.light .rowline{border-color:var(--paperLine)}
+
+/* ===== cronograma ===== */
+.tl{position:relative;flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:28px;align-items:start;padding-top:40px}
+.tl svg{position:absolute;left:0;right:0;top:0;width:100%;height:120px;overflow:visible}
+.tl path{fill:none;stroke:var(--ink3);stroke-width:3;stroke-dasharray:1;stroke-dashoffset:0}
+.s.in .tl path{animation:draw 1.4s var(--out) both;animation-delay:.25s}
+.tl .ev{position:relative;display:flex;flex-direction:column;gap:18px}
+.tl .dot{width:58px;height:58px;border-radius:50%;border:3px solid var(--ink);background:var(--paper);display:grid;place-items:center}
+.tl .dot i{width:22px;height:22px;border-radius:50%;background:var(--coral)}
+.tl .date{font-family:var(--display);font-weight:900;font-size:50px;letter-spacing:.03em;line-height:1}
+.tl .wd{font-family:var(--mono);font-size:20px;letter-spacing:.16em;text-transform:uppercase;color:var(--mutePaper)}
+.tl .ev p{font-size:25px}
+.tl .hrs{display:inline-flex;padding:8px 18px;border-radius:999px;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:21px;width:max-content}
+
+/* ===== cartilha ===== */
+.objs .card p{font-size:25px;line-height:1.42}
+.res .card{justify-content:center;padding:36px 44px}
+.res .big{font-size:96px!important}
+.res h3{font-size:28px!important}
+.res p{font-size:25px}
+.theo .card{padding:32px 34px}
+.theo p{font-size:23px}
+.mini.hot li::before{background:var(--ink)}
+.cards6{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;flex:1}
+.mini{border-radius:40px 40px 40px 12px;padding:30px 34px;display:flex;flex-direction:column;gap:14px;color:var(--paper);position:relative;overflow:hidden}
+.mini .tg{font-family:var(--mono);font-size:19px;letter-spacing:.2em;color:var(--sun)}
+.mini h3{font-size:31px}
+.mini li{font-size:25px;line-height:1.38;padding-left:24px;position:relative}
+.mini li::before{content:"";position:absolute;left:0;top:13px;width:9px;height:9px;border-radius:50%;background:var(--coral)}
+.mini .rg{position:absolute;right:-50px;bottom:-50px;width:170px;height:170px;border-radius:50%;border:2px solid rgba(255,255,255,.14);box-shadow:0 0 0 22px rgba(255,255,255,.04)}
+
+/* ===== ODS ===== */
+.ods{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.od{border-radius:28px 28px 28px 8px;padding:22px 24px;display:flex;flex-direction:column;gap:6px;color:#fff;min-height:170px}
+.od b{font-family:var(--display);font-weight:900;font-size:52px;line-height:1}
+.od span{font-size:21px;font-weight:700;line-height:1.25;text-transform:uppercase;letter-spacing:.04em}
+
+/* ===== HUD ===== */
+#hud{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:99px;background:rgba(27,33,80,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);color:var(--onInk);transition:opacity .4s,background .4s,color .4s}
+#hud.light{background:rgba(255,255,255,.75);color:var(--ink);border-color:var(--paperLine)}
+body.idle #hud{opacity:0}
+body.idle{cursor:none}
+#hud .nb{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;transition:background .2s,transform .25s var(--spring)}
+#hud .nb:hover{background:rgba(169,155,255,.22)}
+#hud .nb:active{transform:scale(.86)}
+#hud .nb svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#segs{display:flex;gap:4px}
+.seg{position:relative;width:30px;height:22px;display:grid;align-items:center}
+.seg i{display:block;height:4px;border-radius:9px;background:currentColor;opacity:.22}
+.seg b{position:absolute;left:0;top:50%;margin-top:-2px;height:4px;border-radius:9px;width:0;background:var(--coral);transition:width .5s var(--out)}
+.seg span{position:absolute;bottom:30px;left:50%;transform:translate(-50%,4px);white-space:nowrap;background:var(--ink);color:var(--paper);font-size:12px;padding:5px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:.2s}
+.seg:hover span{opacity:1;transform:translate(-50%,0)}
+#pgn{font-family:var(--mono);font-size:13px;min-width:52px;text-align:center;opacity:.85}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}
+}
+
+/* ===== PDF / impressão: um slide por página, sem animação ===== */
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:none}
+  #bg,#glow,#field,#hud,#iris{display:none!important}
+  #stage{position:static;transform:none!important;width:1920px;height:auto}
+  .s{position:relative;visibility:visible!important;opacity:1!important;width:1920px;height:1080px;break-after:page;page-break-after:always;transition:none}
+  .s:last-child{break-after:auto;page-break-after:auto}
+  .s.dark{background:var(--ink)}
+  .s.light{background:var(--paper)}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+<symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/></symbol>
+<symbol id="i-net" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M10.8 7.2 6.2 15.8M13.2 7.2l4.6 8.6M7.5 18h9"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5c.8 0 1.5-.7 1.5-1.5z"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16M8.5 16v-4M13 16V8M17.5 16v-6"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+<symbol id="i-form" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="m8.5 9 1.5 1.5L13 7.5M8.5 15l1.5 1.5 3-3M15 9.5h1M15 15.5h1"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5.5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4.5" y="5" width="15" height="10" rx="1.5"/><path d="M2.5 18.5h19"/></symbol>
+<symbol id="i-left" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7"/></symbol>
+<symbol id="i-right" viewBox="0 0 24 24"><path d="m9.5 5 7 7-7 7"/></symbol>
+<symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol>
+</defs></svg>
+
+<div id="bg" class="light"></div>
+<div id="glow"></div>
+<canvas id="field" aria-hidden="true"></canvas>
+<div id="iris"></div>
+
+<main id="stage">
+
+<!-- 01 · CAPA -->
+<section class="s light" id="s0" data-g="0" data-title="Capa">
+  <svg class="rings" style="right:-120px;top:-140px;width:1300px;height:1300px" viewBox="0 0 1300 1300" aria-hidden="true">
+    <g class="spin"><circle cx="650" cy="650" r="640" stroke="rgba(18,22,58,.07)" stroke-dasharray="4 14"/></g>
+    <circle cx="650" cy="650" r="560" stroke="rgba(18,22,58,.08)"/>
+    <circle cx="650" cy="650" r="470" stroke="rgba(169,155,255,.55)"/>
+  </svg>
+  <svg class="wave" style="bottom:0;height:150px" viewBox="0 0 1920 150" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 110 C 420 20, 820 160, 1240 80 S 1760 40, 1920 70 L1920 150 L0 150Z" fill="#E8E2F6"/>
+    <path d="M0 130 C 480 70, 900 170, 1320 112 S 1800 96, 1920 108" fill="none" stroke="#FF6F59" stroke-width="3"/>
+  </svg>
+  <div class="left">
+    <div class="mark r" style="--d:0">
+      <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true"><circle cx="23" cy="23" r="21" fill="none" stroke="#12163A" stroke-width="2.5"/><circle cx="23" cy="23" r="12" fill="none" stroke="#FF6F59" stroke-width="2.5"/><circle cx="23" cy="23" r="4" fill="#FF6F59"/></svg>
+      Projeto de Extensão · Psicologia · 2026
+    </div>
+    <div>
+      <h1 class="r" style="--d:1"><span>Mente</span><span>em <em>foco</em></span></h1>
+      <p class="tag r" style="--d:2">Conversando sobre saúde mental na adolescência com estudantes da escola pública</p>
+    </div>
+    <div class="meta r" style="--d:3">
+      <div><small>Estudante</small><b>Bruna de Jesus Daltro</b></div>
+      <div><small>RA</small><b>5499241</b></div>
+      <div><small>Curso</small><b>Psicologia · 2º semestre</b></div>
+      <div><small>Professor responsável</small><b>Fabio Fetz de Almeida</b></div>
+      <div><small>Temática</small><b>Saúde mental na adolescência</b></div>
+      <div><small>Instituição</small><b>UNISA</b></div>
+    </div>
+  </div>
+  <div class="photo arch r" style="--d:2"><img src="img/grupo.jpg" alt="Grupo de adolescentes sentados no chão conversando e rindo"></div>
+</section>
+
+<!-- 02 · ROTEIRO -->
+<section class="s dark" id="s1" data-g="1" data-title="Roteiro">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Roteiro do projeto</p>
+    <h1 class="r" style="--d:1">Do dado à <em>ação</em></h1>
+  </div>
+  <div id="route">
+    <svg class="path" viewBox="0 0 1640 600" preserveAspectRatio="none" aria-hidden="true">
+      <path class="ln" pathLength="1" d="M46 120 C 260 120, 300 420, 500 420 S 760 120, 960 120 S 1200 420, 1420 420"/>
+    </svg>
+    <div class="stop r" style="--d:2;left:0;top:74px"><div class="n" style="background:var(--coral)">01</div><h3>Análise situacional</h3><p class="mute">Onde a ação acontece, por que ali e para quem.</p></div>
+    <div class="stop r" style="--d:3;left:454px;top:374px"><div class="n" style="background:var(--lilac)">02</div><h3>O problema</h3><p class="mute">O que os dados oficiais mostram e a base teórica.</p></div>
+    <div class="stop r" style="--d:4;left:914px;top:74px"><div class="n" style="background:var(--mint)">03</div><h3>A solução</h3><p class="mute">O que será feito, como, por quem e quando.</p></div>
+    <div class="stop r" style="--d:5;left:1374px;top:374px;width:300px"><div class="n" style="background:var(--sun)">04</div><h3>Acompanha&shy;mento</h3><p class="mute">Indicadores, ODS e alcance esperado.</p></div>
+  </div>
+  <div class="foot"><span>Mente em Foco</span><span>02 / 17</span></div>
+</section>
+
+<!-- 03 · LOCAL -->
+<section class="s dark" id="s2" data-g="2" data-title="Etapa 1 · Local">
+  <div style="display:grid;grid-template-columns:640px 1fr;gap:110px;flex:1;min-height:0;align-items:stretch">
+    <div class="arch r" style="--d:1;margin:22px 0 0 22px;height:760px"><img src="img/aula-online.jpg" alt="Estudante assistindo a uma aula online no notebook"></div>
+    <div style="display:flex;flex-direction:column;gap:34px;justify-content:center;min-width:0">
+      <div class="hd">
+        <p class="eyebrow r" style="--d:0">Etapa 1 · Análise situacional</p>
+        <h1 class="r" style="--d:1">Onde a ação <em>acontece</em></h1>
+      </div>
+      <span class="chip r" style="--d:2"><svg class="ic" style="width:28px;height:28px"><use href="#i-laptop"/></svg>Formato 100% online</span>
+      <p class="r" style="--d:3">Roda de conversa no Google Meet e cartilha digital para estudantes do Ensino Médio de uma <b>escola pública estadual da região de Santo Amaro</b>, Zona Sul de São Paulo, território onde a UNISA está inserida.</p>
+      <div class="rowline r" style="--d:4;grid-template-columns:200px 1fr">
+        <span class="big" style="font-size:92px;color:var(--mint)">93%</span>
+        <p class="small mute">dos brasileiros de 9 a 17 anos usam a internet. O formato online alcança o público onde ele já está, sem depender de deslocamento (CETIC.br, 2025).</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>●</b> Etapa 1</span><span>03 / 17</span></div>
+</section>
+
+<!-- 04 · JUSTIFICATIVA + PÚBLICO -->
+<section class="s light" id="s3" data-g="2" data-title="Etapa 1 · Público">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Etapa 1 · Justificativa e público-alvo</p>
+    <h1 class="r" style="--d:1">Por que ali e <em>para quem</em></h1>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:56px;flex:1;min-height:0">
+    <div class="card r" style="--d:2;background:var(--ink);color:var(--paper);border:0;justify-content:space-between;padding:48px 52px">
+      <div style="display:flex;align-items:baseline;gap:20px"><span class="big" data-count="70" style="font-size:150px;color:var(--coral)">70</span><span class="big" style="font-size:70px;color:var(--coral)">%</span></div>
+      <p class="lead">dos estudantes da rede estadual paulista relataram sintomas de depressão ou ansiedade após a pandemia.</p>
+      <p class="small" style="color:var(--muteInk)">A Lei 13.935/2019 prevê psicólogos na educação básica, mas a implantação ainda é limitada. A extensão aproxima a Psicologia da escola pública do entorno da universidade.</p>
+      <p class="mono small" style="color:var(--lilac)">Instituto Ayrton Senna / SEDUC-SP, 2022</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:22px;min-width:0">
+      <div class="card r" style="--d:3;flex-direction:row;align-items:center;gap:32px">
+        <span class="big" style="font-size:74px;width:300px;flex:none;white-space:nowrap">14–17</span>
+        <p>anos, da 1ª à 3ª série do Ensino Médio da rede pública estadual</p>
+      </div>
+      <div class="card r" style="--d:4;flex-direction:row;align-items:center;gap:32px">
+        <span class="big" data-count="30" style="font-size:74px;width:300px;flex:none;color:var(--coral)">30</span>
+        <p>estudantes na roda de conversa online (meta)</p>
+      </div>
+      <div class="card r" style="--d:5;flex-direction:row;align-items:center;gap:32px">
+        <span class="big" data-count="150" style="font-size:74px;width:300px;flex:none;color:var(--ink3)">150</span>
+        <p>pessoas alcançadas pela cartilha digital: estudantes, famílias e educadores</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>●</b> Etapa 1</span><span>04 / 17</span></div>
+</section>
+
+<!-- 05 · OBJETIVOS -->
+<section class="s dark" id="s4" data-g="2" data-title="Etapa 1 · Objetivos">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Etapa 1 · Objetivos da ação</p>
+    <h1 class="r" style="--d:1">O que <em>queremos</em> alcançar</h1>
+  </div>
+  <p class="lead r" style="--d:2;max-width:1500px;padding-left:34px;border-left:4px solid var(--coral)">Promover a saúde mental e o autocuidado de adolescentes de escola pública por meio de uma ação psicoeducativa online, ampliando o acesso à informação qualificada e à rede de apoio.</p>
+  <div class="objs" style="display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:24px;flex:1">
+    <div class="card r" style="--d:3;flex-direction:row;gap:24px;align-items:center;padding:28px 32px"><div class="icb" style="background:rgba(255,111,89,.15);color:var(--coral)"><svg class="ic"><use href="#i-info"/></svg></div><p class="small">Informar sobre saúde mental, ansiedade e sinais de alerta, reduzindo o estigma</p></div>
+    <div class="card r" style="--d:4;flex-direction:row;gap:24px;align-items:center;padding:28px 32px"><div class="icb" style="background:rgba(169,155,255,.16);color:var(--lilac)"><svg class="ic"><use href="#i-phone"/></svg></div><p class="small">Refletir sobre o uso saudável das redes sociais e a importância do sono</p></div>
+    <div class="card r" style="--d:5;flex-direction:row;gap:24px;align-items:center;padding:28px 32px"><div class="icb" style="background:rgba(79,209,176,.15);color:var(--mint)"><svg class="ic"><use href="#i-wind"/></svg></div><p class="small">Ensinar estratégias de autocuidado e regulação emocional: respiração, rotina e vínculos</p></div>
+    <div class="card r" style="--d:6;flex-direction:row;gap:24px;align-items:center;padding:28px 32px"><div class="icb" style="background:rgba(255,209,102,.15);color:var(--sun)"><svg class="ic"><use href="#i-net"/></svg></div><p class="small">Divulgar a rede de apoio: CVV 188, UBS, CAPS Infantojuvenil, SAMU 192 e escola</p></div>
+    <div class="card r" style="--d:7;flex-direction:row;gap:24px;align-items:center;padding:28px 32px"><div class="icb" style="background:rgba(255,111,89,.15);color:var(--coral)"><svg class="ic"><use href="#i-book"/></svg></div><p class="small">Produzir e distribuir a cartilha digital “Mente em Foco”</p></div>
+    <div class="card r" style="--d:8;flex-direction:row;gap:24px;align-items:center;padding:28px 32px"><div class="icb" style="background:rgba(169,155,255,.16);color:var(--lilac)"><svg class="ic"><use href="#i-chart"/></svg></div><p class="small">Avaliar o conhecimento dos participantes antes e depois da ação</p></div>
+  </div>
+  <div class="foot"><span><b>●</b> Etapa 1</span><span>05 / 17</span></div>
+</section>
+
+<!-- 06 · PROBLEMA EM PONTOS -->
+<section class="s dark" id="s5" data-g="3" data-title="Etapa 2 · Problema" data-dots="1">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Etapa 2 · Apresentação do problema</p>
+    <h1 class="r" style="--d:1">De cada 100 escolares <em>de 13 a 17 anos</em></h1>
+  </div>
+  <div class="waffles">
+    <div class="wf r" style="--d:2"><div class="grid" data-n="31" style="--c:var(--lilac)"></div><div class="num"><span class="big" data-count="31.4" data-dec="1" style="color:var(--lilac)">31,4</span><span>%</span></div><p>sentem-se tristes na maior parte do tempo ou sempre</p></div>
+    <div class="wf r" style="--d:3"><div class="grid" data-n="51" style="--c:var(--sun)"></div><div class="num"><span class="big" data-count="50.6" data-dec="1" style="color:var(--sun)">50,6</span><span>%</span></div><p>sentem-se muito preocupados com as coisas do dia a dia</p></div>
+    <div class="wf r" style="--d:4"><div class="grid" data-n="21" style="--c:var(--coral)"></div><div class="num"><span class="big" data-count="21.4" data-dec="1" style="color:var(--coral)">21,4</span><span>%</span></div><p>sentiram que a vida não valia a pena nos últimos 30 dias</p></div>
+  </div>
+  <div class="foot"><span class="src">Fonte: IBGE, Pesquisa Nacional de Saúde do Escolar (PeNSE) 2019 · 1 ponto = 1 estudante</span><span>06 / 17</span></div>
+</section>
+
+<!-- 07 · CONTEXTO -->
+<section class="s dark" id="s6" data-g="3" data-title="Etapa 2 · Contexto" style="padding-left:0">
+  <div style="display:grid;grid-template-columns:700px 1fr;gap:100px;flex:1;min-height:0">
+    <div class="r" style="--d:0;margin:-104px 0 -150px;position:relative">
+      <img src="img/jovem-celular.jpg" alt="Adolescente iluminado pela tela do celular no escuro" style="width:100%;height:100%;object-fit:cover;object-position:35% 50%;border-radius:0 420px 420px 0">
+      <div style="position:absolute;inset:40px -26px 40px auto;width:440px;border:2px solid var(--coral);border-left:0;border-radius:0 400px 400px 0;pointer-events:none"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:30px;justify-content:center;min-width:0;padding-right:140px">
+      <div class="hd">
+        <p class="eyebrow r" style="--d:0">Etapa 2 · O problema</p>
+        <h1 class="r" style="--d:1;font-size:66px">O sofrimento tem <em>rosto e gênero</em></h1>
+      </div>
+      <div class="r" style="--d:2;display:flex;flex-direction:column;gap:16px">
+        <p class="small mute">Sentiram que a vida não valia a pena (PeNSE 2019)</p>
+        <div style="display:grid;grid-template-columns:150px 1fr 110px;align-items:center;gap:20px"><b style="font-size:24px">Meninas</b><div style="height:30px;border-radius:0 15px 15px 0;background:var(--coral);width:100%"></div><span class="mono" style="font-size:26px">29,6%</span></div>
+        <div style="display:grid;grid-template-columns:150px 1fr 110px;align-items:center;gap:20px"><b style="font-size:24px">Meninos</b><div><div style="height:30px;border-radius:0 15px 15px 0;background:var(--lilac);width:43.9%"></div></div><span class="mono" style="font-size:26px">13,0%</span></div>
+      </div>
+      <div class="rowline r" style="--d:3;grid-template-columns:170px 1fr"><span class="big" style="font-size:84px;color:var(--sun)">2ª</span><p class="small">principal causa de morte entre 15 e 19 anos é o suicídio <span class="mute">(Ministério da Saúde, 2024)</span></p></div>
+      <div class="rowline r" style="--d:4;grid-template-columns:170px 1fr"><span class="big" style="font-size:84px;color:var(--mint)">1/7</span><p class="small">adolescentes de 10 a 19 anos vive um transtorno mental <span class="mute">(OMS/OPAS)</span></p></div>
+      <p class="small r" style="--d:5">Na escola faltam espaços de escuta e informação sobre o tema.</p>
+    </div>
+  </div>
+  <div class="foot" style="left:840px"><span><b>●</b> Etapa 2</span><span>07 / 17</span></div>
+</section>
+
+<!-- 08 · RESULTADOS ESPERADOS -->
+<section class="s light" id="s7" data-g="3" data-title="Etapa 2 · Resultados">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Etapa 2 · Resultados esperados</p>
+    <h1 class="r" style="--d:1">O que deve <em>mudar</em></h1>
+  </div>
+  <div class="res" style="display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1.5fr 1fr;gap:26px;flex:1">
+    <div class="card r" style="--d:2"><span class="big" style="font-size:72px;color:var(--coral)">+30%</span><h3 style="font-size:25px">Conhecimento</h3><p class="small mute">de acertos no questionário após a ação</p></div>
+    <div class="card r" style="--d:3"><span class="big" style="font-size:72px;color:var(--ink3)">≥ 4/5</span><h3 style="font-size:25px">Satisfação</h3><p class="small mute">média dos participantes, em escala de 1 a 5</p></div>
+    <div class="card r" style="--d:4"><span class="big" style="font-size:72px;color:var(--coral)">3 + 2</span><h3 style="font-size:25px">Autocuidado e rede</h3><p class="small mute">estratégias de autocuidado e serviços de apoio que cada participante sabe citar</p></div>
+    <div class="card r" style="--d:5;flex-direction:row;align-items:center;gap:24px"><div class="icb" style="background:var(--paper2);color:var(--ink3)"><svg class="ic"><use href="#i-heart"/></svg></div><p class="small">Menos estigma e mais disposição para pedir ajuda</p></div>
+    <div class="card r" style="--d:6;flex-direction:row;align-items:center;gap:24px"><div class="icb" style="background:var(--paper2);color:var(--ink3)"><svg class="ic"><use href="#i-book"/></svg></div><p class="small">Cartilha disponível de forma permanente para a escola</p></div>
+    <div class="card r" style="--d:7;flex-direction:row;align-items:center;gap:24px"><div class="icb" style="background:var(--paper2);color:var(--ink3)"><svg class="ic"><use href="#i-net"/></svg></div><p class="small">Vínculo fortalecido entre universidade e escola</p></div>
+  </div>
+  <div class="foot"><span><b>●</b> Etapa 2</span><span>08 / 17</span></div>
+</section>
+
+<!-- 09 · FUNDAMENTAÇÃO -->
+<section class="s dark" id="s8" data-g="3" data-title="Etapa 2 · Teoria">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Etapa 2 · Fundamentação teórica</p>
+    <h1 class="r" style="--d:1">A base <em>teórica</em></h1>
+  </div>
+  <div class="theo" style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;flex:1">
+    <div class="card r" style="--d:2;gap:18px"><span class="chip lilac" style="font-size:19px">Erikson, 1976</span><h3 style="font-size:26px">Adolescência e identidade</h3><p class="small mute">Fase da crise “identidade versus confusão de papéis”, em que o jovem busca pertencimento e sentido. Intervir cedo, na escola, está entre as estratégias mais efetivas (Kieling et al., 2011).</p></div>
+    <div class="card r" style="--d:3;gap:18px"><span class="chip lilac" style="font-size:19px">OMS/OPAS · CETIC.br</span><h3 style="font-size:26px">Sofrimento e vida digital</h3><p class="small mute">93% dos jovens de 9 a 17 anos estão online e expostos a comparação social, cyberbullying e noites mal dormidas, fatores que agravam ansiedade e tristeza.</p></div>
+    <div class="card r" style="--d:4;gap:18px"><span class="chip lilac" style="font-size:19px">OMS, 1986 · Brasil, 2007</span><h3 style="font-size:26px">Promoção da saúde</h3><p class="small mute">A Carta de Ottawa valoriza autonomia e ambientes saudáveis. O Programa Saúde na Escola e a Lei 13.935/2019 levam esse cuidado para a educação básica.</p></div>
+    <div class="card r" style="--d:5;gap:18px"><span class="chip lilac" style="font-size:19px">Afonso; Abade, 2008</span><h3 style="font-size:26px">Roda de conversa</h3><p class="small mute">Método dialógico inspirado em Freire (1996): o conhecimento é construído com o grupo. A prática segue as Referências Técnicas do CFP (2019).</p></div>
+  </div>
+  <div class="r" style="--d:6;display:flex;align-items:center;gap:44px;padding:30px 44px;border-radius:999px;background:var(--coral);color:var(--ink)">
+    <span class="big" style="font-size:84px;white-space:nowrap">1 em 7</span>
+    <p style="font-size:27px;font-weight:600">adolescentes de 10 a 19 anos vive um transtorno mental, e metade dos casos começa até os 14 anos.</p>
+    <span class="mono" style="font-size:20px;white-space:nowrap;margin-left:auto">OMS / OPAS</span>
+  </div>
+  <div class="foot"><span><b>●</b> Etapa 2</span><span>09 / 17</span></div>
+</section>
+
+<!-- 10 · O QUE SERÁ FEITO -->
+<section class="s dark" id="s9" data-g="4" data-title="Etapa 3 · O quê">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Etapa 3 · Solução · O quê</p>
+    <h1 class="r" style="--d:1">Três frentes de <em>ação</em></h1>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:26px;flex:1;min-height:0">
+    <div class="card r" style="--d:2;padding:0;overflow:hidden">
+      <img src="img/redes.jpg" alt="Adolescente deitada usando o celular" style="width:100%;height:210px;object-fit:cover">
+      <div style="padding:28px 36px 34px;display:flex;flex-direction:column;gap:14px"><h3>Cartilha digital</h3><p class="small mute">6 cards para Instagram e WhatsApp, e uma versão em PDF: saúde mental, sinais de alerta, redes sociais, autocuidado, como ajudar um amigo e onde pedir ajuda.</p></div>
+    </div>
+    <div class="card r" style="--d:3;padding:0;overflow:hidden">
+      <img src="img/amigos.jpg" alt="Grupo de jovens conversando ao ar livre" style="width:100%;height:210px;object-fit:cover">
+      <div style="padding:28px 36px 34px;display:flex;flex-direction:column;gap:14px"><h3>Roda de conversa · 2h</h3><p class="small mute">No Google Meet: acolhimento, dinâmica “Termômetro emocional”, perguntas disparadoras, respiração 4-4-6 e apresentação da rede de apoio.</p></div>
+    </div>
+    <div class="card r" style="--d:4;padding:0;overflow:hidden">
+      <img src="img/estudo-online.jpg" alt="Estudante com caderno durante aula online" style="width:100%;height:210px;object-fit:cover;object-position:50% 30%">
+      <div style="padding:28px 36px 34px;display:flex;flex-direction:column;gap:14px"><h3>Avaliação</h3><p class="small mute">Questionário anônimo no Google Forms, antes e depois da ação, para medir conhecimento e satisfação.</p></div>
+    </div>
+  </div>
+  <p class="small r" style="--d:5"><b style="color:var(--coral)">18 horas no total.</b> <span class="mute">Termo de autorização (Anexo 1) assinado pela escola e autorização dos responsáveis pelos estudantes menores de idade (ECA).</span></p>
+  <div class="foot"><span><b>●</b> Etapa 3</span><span>10 / 17</span></div>
+</section>
+
+<!-- 11 · CRONOGRAMA -->
+<section class="s light" id="s10" data-g="4" data-title="Etapa 3 · Cronograma">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:40px">
+    <div class="hd">
+      <p class="eyebrow r" style="--d:0">Etapa 3 · Cronograma</p>
+      <h1 class="r" style="--d:1">Dez dias, <em>cinco passos</em></h1>
+    </div>
+    <div class="r" style="--d:2;text-align:right"><span class="big" data-count="18" style="font-size:120px;color:var(--coral)">18</span><span class="big" style="font-size:52px;color:var(--coral)"> h</span><p class="mono small" style="color:var(--mutePaper);letter-spacing:.12em">CARGA HORÁRIA TOTAL</p></div>
+  </div>
+  <div class="tl">
+    <svg viewBox="0 0 1640 120" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M29 69 C 200 10, 250 120, 357 69 S 560 10, 686 69 S 890 120, 1015 69 S 1220 10, 1344 69 S 1560 110, 1640 60"/></svg>
+    <div class="ev r" style="--d:2"><div class="dot"><i></i></div><div class="date">26.11</div><div class="wd">Quinta</div><p class="small">Planejamento, pesquisa em fontes oficiais, contato com a escola e Termo de autorização</p><span class="hrs">4 h</span></div>
+    <div class="ev r" style="--d:3"><div class="dot"><i></i></div><div class="date">28.11</div><div class="wd">Sábado</div><p class="small">Criação da cartilha digital (6 cards + PDF) e do roteiro da roda de conversa</p><span class="hrs">6 h</span></div>
+    <div class="ev r" style="--d:4"><div class="dot"><i></i></div><div class="date">01.12</div><div class="wd">Terça</div><p class="small">Divulgação, autorizações dos responsáveis e questionário pré-ação</p><span class="hrs">2 h</span></div>
+    <div class="ev r" style="--d:5"><div class="dot"><i style="background:var(--ink)"></i></div><div class="date" style="color:var(--coral)">03.12</div><div class="wd">Quinta · 14h–16h</div><p class="small"><b>Roda de conversa online</b> no Google Meet e envio da cartilha</p><span class="hrs" style="background:var(--coral)">2 h</span></div>
+    <div class="ev r" style="--d:6"><div class="dot"><i></i></div><div class="date">05.12</div><div class="wd">Sábado</div><p class="small">Questionário pós-ação, análise dos resultados e relatório final</p><span class="hrs">4 h</span></div>
+  </div>
+  <div class="foot"><span><b>●</b> Etapa 3</span><span>11 / 17</span></div>
+</section>
+
+<!-- 12 · COMO -->
+<section class="s dark" id="s11" data-g="4" data-title="Etapa 3 · Como">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Etapa 3 · Como · Metodologia e materiais</p>
+    <h1 class="r" style="--d:1">Como a ação <em>funciona</em></h1>
+  </div>
+  <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:70px;flex:1;min-height:0">
+    <ol style="display:flex;flex-direction:column">
+      <li class="rowline r" style="--d:2;grid-template-columns:70px 1fr;padding:18px 0"><span class="mono" style="font-size:24px;color:var(--coral)">01</span><span class="small" style="font-size:26px">Levantamento de dados públicos: IBGE, OMS/OPAS, Ministério da Saúde e CETIC.br</span></li>
+      <li class="rowline r" style="--d:3;grid-template-columns:70px 1fr;padding:18px 0"><span class="mono" style="font-size:24px;color:var(--coral)">02</span><span class="small" style="font-size:26px">Cartilha baseada em evidências</span></li>
+      <li class="rowline r" style="--d:4;grid-template-columns:70px 1fr;padding:18px 0"><span class="mono" style="font-size:24px;color:var(--coral)">03</span><span class="small" style="font-size:26px">Roda de conversa online com perguntas disparadoras (Afonso; Abade, 2008)</span></li>
+      <li class="rowline r" style="--d:5;grid-template-columns:70px 1fr;padding:18px 0"><span class="mono" style="font-size:24px;color:var(--coral)">04</span><span class="small" style="font-size:26px">Questionário pré e pós com 5 questões e escala de satisfação de 1 a 5</span></li>
+      <li class="rowline r" style="--d:6;grid-template-columns:70px 1fr;padding:18px 0"><span class="mono" style="font-size:24px;color:var(--coral)">05</span><span class="small" style="font-size:26px">Análise descritiva dos resultados e relatório</span></li>
+    </ol>
+    <div style="display:flex;flex-direction:column;gap:22px;min-width:0">
+      <div class="card r" style="--d:3;flex-direction:row;align-items:center;gap:30px;padding:30px 36px">
+        <span class="big" style="font-size:84px;color:var(--mint);flex:none">R$ 0</span>
+        <p class="small mute">Computador ou celular, Google Meet e Forms, Canva gratuito, slides, autorizações e lista da rede de apoio</p>
+      </div>
+      <div class="card r" style="--d:4;border-color:var(--coral);padding:30px 36px">
+        <div style="display:flex;align-items:center;gap:16px;color:var(--coral)"><svg class="ic" style="width:38px;height:38px"><use href="#i-shield"/></svg><h3 style="font-size:24px">Cuidado ético</h3></div>
+        <p class="small">A ação é educativa, não terapêutica. Situações de risco são encaminhadas à escola e à rede: <b>CVV 188</b>, UBS, CAPS IJ e <b>SAMU 192</b>.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span><b>●</b> Etapa 3</span><span>12 / 17</span></div>
+</section>
+
+<!-- 13 · QUEM, PARCEIROS, QUANDO -->
+<section class="s dark" id="s12" data-g="4" data-title="Etapa 3 · Quem e quando">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Etapa 3 · Quem · Parceiros · Quando</p>
+    <h1 class="r" style="--d:1">Quem faz, <em>com quem</em> e quando</h1>
+  </div>
+  <div style="display:grid;grid-template-columns:1.15fr 1fr .85fr;gap:44px;flex:1;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <p class="mono small r" style="--d:2;color:var(--lilac);letter-spacing:.16em">PESSOAS E FUNÇÕES</p>
+      <div class="r" style="--d:3;display:flex;gap:20px;align-items:flex-start"><div class="icb" style="width:66px;height:66px;border-radius:50%;background:var(--coral);color:var(--ink);font-weight:900;font-size:24px">BD</div><div><b style="font-size:24px">Bruna de Jesus Daltro</b><p class="small mute">Extensionista: planejamento, pesquisa, cartilha, mediação e análise</p></div></div>
+      <div class="r" style="--d:4;display:flex;gap:20px;align-items:flex-start"><div class="icb" style="width:66px;height:66px;border-radius:50%;background:var(--lilac);color:var(--ink);font-weight:900;font-size:24px">FA</div><div><b style="font-size:24px">Prof. Fabio Fetz de Almeida</b><p class="small mute">Orientação e supervisão técnica e ética</p></div></div>
+      <div class="r" style="--d:5;display:flex;gap:20px;align-items:flex-start"><div class="icb" style="width:66px;height:66px;border-radius:50%;background:var(--mint);color:var(--ink)"><svg class="ic" style="width:32px;height:32px"><use href="#i-book"/></svg></div><div><b style="font-size:24px">Coordenação da escola</b><p class="small mute">Mobiliza os alunos e acompanha a roda</p></div></div>
+      <div class="r" style="--d:6;display:flex;gap:20px;align-items:flex-start"><div class="icb" style="width:66px;height:66px;border-radius:50%;background:var(--sun);color:var(--ink);font-weight:900;font-size:22px">≈30</div><div><b style="font-size:24px">Estudantes do Ensino Médio</b><p class="small mute">Participam e multiplicam a cartilha</p></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <p class="mono small r" style="--d:2;color:var(--lilac);letter-spacing:.16em">PARCEIROS</p>
+      <div class="card r" style="--d:3;padding:24px 30px;gap:6px"><b style="font-size:24px">UNISA · Psicologia</b><p class="small mute">Supervisão acadêmica</p></div>
+      <div class="card r" style="--d:4;padding:24px 30px;gap:6px"><b style="font-size:24px">Escola estadual · Santo Amaro</b><p class="small mute">SEDUC-SP · mobilização do público</p></div>
+      <div class="card r" style="--d:5;padding:24px 30px;gap:6px"><b style="font-size:24px">CVV 188 e rede SUS</b><p class="small mute">UBS e CAPS Infantojuvenil como referência</p></div>
+    </div>
+    <div class="card r" style="--d:4;background:var(--coral);border:0;color:var(--ink);justify-content:space-between;padding:40px 40px;border-radius:220px 220px 44px 44px">
+      <p class="mono small" style="letter-spacing:.16em;text-align:center;margin-top:30px">RODA DE CONVERSA</p>
+      <div style="text-align:center"><div class="big" style="font-size:118px">03.12</div><div class="big" style="font-size:40px;letter-spacing:.08em">2026</div></div>
+      <p style="text-align:center;font-weight:700;font-size:25px">Quinta · 14h às 16h<br>Google Meet</p>
+      <p class="small" style="text-align:center">Execução de 26/11 a 05/12</p>
+    </div>
+  </div>
+  <div class="foot"><span><b>●</b> Etapa 3</span><span>13 / 17</span></div>
+</section>
+
+<!-- 14 · CARTILHA -->
+<section class="s light" id="s13" data-g="4" data-title="Etapa 3 · Cartilha">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Etapa 3 · Material produzido</p>
+    <h1 class="r" style="--d:1">A cartilha <em>Mente em Foco</em></h1>
+  </div>
+  <div class="cards6">
+    <div class="mini r" style="--d:2;background:var(--ink)"><span class="tg">01 / 06</span><h3>O que é saúde mental?</h3><ul><li>Bem-estar para lidar com o estresse, aprender e se relacionar</li><li>Falar de sentimentos é cuidado</li></ul><i class="rg"></i></div>
+    <div class="mini r" style="--d:3;background:var(--ink3)"><span class="tg">02 / 06</span><h3>Sinais de alerta</h3><ul><li>Preocupação que não passa</li><li>Insônia, irritação, isolamento</li></ul><i class="rg"></i></div>
+    <div class="mini r" style="--d:4;background:var(--ink)"><span class="tg">03 / 06</span><h3>Redes com equilíbrio</h3><ul><li>Perfis mostram recortes, não a vida real</li><li>Telas desligadas 1h antes de dormir</li></ul><i class="rg"></i></div>
+    <div class="mini r" style="--d:5;background:var(--ink3)"><span class="tg">04 / 06</span><h3>Autocuidado</h3><ul><li>Sono, alimentação e movimento</li><li>Respiração 4-4-6: inspire 4s, segure 4s, solte 6s</li></ul><i class="rg"></i></div>
+    <div class="mini r" style="--d:6;background:var(--ink)"><span class="tg">05 / 06</span><h3>Ajudar um amigo</h3><ul><li>Escute sem julgar</li><li>Risco à vida não é segredo: chame um adulto</li></ul><i class="rg"></i></div>
+    <div class="mini hot r" style="--d:7;background:var(--coral);color:var(--ink)"><span class="tg" style="color:var(--ink)">06 / 06</span><h3>Onde pedir ajuda</h3><ul><li style="font-weight:700">CVV 188 · gratuito, 24h</li><li>UBS, CAPS IJ, SAMU 192 e a escola</li></ul><i class="rg" style="border-color:rgba(18,22,58,.2)"></i></div>
+  </div>
+  <div class="foot"><span>Cards para Instagram e WhatsApp, com versão em PDF</span><span>14 / 17</span></div>
+</section>
+
+<!-- 15 · INDICADORES -->
+<section class="s dark" id="s14" data-g="5" data-title="Etapa 4 · Indicadores">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Etapa 4 · Acompanhamento e evolução</p>
+    <h1 class="r" style="--d:1">Indicadores de <em>desempenho</em></h1>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1.1fr .95fr;gap:40px;flex:1;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <p class="mono small r" style="--d:2;color:var(--lilac);letter-spacing:.16em">PARTICIPANTES</p>
+      <div class="card r" style="--d:3;gap:8px"><span class="big" data-count="30" style="font-size:96px;color:var(--coral)">30</span><p class="small mute">estudantes na roda, mais a extensionista, o orientador e 1 educador(a)</p></div>
+      <p class="small mute r" style="--d:4">Medimos: presentes, taxa de resposta aos questionários e satisfação média (meta ≥ 4 de 5).</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <p class="mono small r" style="--d:2;color:var(--lilac);letter-spacing:.16em">ABRANGÊNCIA ESTIMADA</p>
+      <div class="card r" style="--d:3;gap:18px">
+        <div class="rowline" style="grid-template-columns:1fr auto;border-top:0;padding-top:0"><span class="small">30 participantes × 2,8 moradores por domicílio</span><b class="mono" style="font-size:28px">84</b></div>
+        <div class="rowline" style="grid-template-columns:1fr auto"><span class="small">Alcance da cartilha nas redes da escola</span><b class="mono" style="font-size:28px">150</b></div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px"><span class="small mute">Beneficiados indiretos</span><span class="big" data-count="234" style="font-size:96px;color:var(--mint)">234</span></div>
+      </div>
+      <p class="small mute r" style="--d:4">Média de moradores: IBGE, Censo 2022. A cartilha fica disponível para as próximas turmas.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <p class="mono small r" style="--d:2;color:var(--lilac);letter-spacing:.16em">ODS TRABALHADOS</p>
+      <div class="ods">
+        <div class="od pop" style="--d:3;background:#4C9F38"><b>3</b><span>Saúde e bem-estar</span></div>
+        <div class="od pop" style="--d:4;background:#C5192D"><b>4</b><span>Educação de qualidade</span></div>
+        <div class="od pop" style="--d:5;background:#DD1367"><b>10</b><span>Redução das desigualdades</span></div>
+        <div class="od pop" style="--d:6;background:#19486A"><b>17</b><span>Parcerias</span></div>
+      </div>
+      <p class="small mute r" style="--d:7">Meta 3.4: promover a saúde mental e o bem-estar.</p>
+    </div>
+  </div>
+  <div class="foot"><span><b>●</b> Etapa 4</span><span>15 / 17</span></div>
+</section>
+
+<!-- 16 · ENCERRAMENTO -->
+<section class="s dark" id="s15" data-g="5" data-title="Encerramento">
+  <img src="img/acenando.jpg" alt="Duas estudantes sorrindo e acenando no corredor da escola" style="position:absolute;right:0;top:0;width:900px;height:1080px;object-fit:cover;object-position:60% 50%;border-radius:540px 0 0 540px">
+  <div style="position:absolute;right:880px;top:120px;width:120px;height:840px;border:2px solid var(--coral);border-right:0;border-radius:420px 0 0 420px;pointer-events:none"></div>
+  <div style="width:900px;display:flex;flex-direction:column;gap:30px;position:relative;flex:1;justify-content:center">
+    <div class="hd">
+      <p class="eyebrow r" style="--d:0">Etapa 4 · Encerramento do projeto</p>
+      <h1 class="r" style="--d:1">Considerações <em>finais</em></h1>
+    </div>
+    <p class="r" style="--d:2;font-size:26px">A extensão universitária pode aproximar a Psicologia da escola pública mesmo sem presença física. Os dados oficiais mostram um sofrimento frequente, que atinge mais as meninas e encontra poucos espaços de escuta.</p>
+    <p class="r mute" style="--d:3;font-size:26px">A roda online com cartilha digital é de baixo custo, replicável e próxima da linguagem dos jovens. Para a formação, exercita escuta, ética, comunicação científica e trabalho em rede.</p>
+    <div class="r" style="--d:4;display:flex;flex-wrap:wrap;gap:12px">
+      <span class="chip">Encontros periódicos</span><span class="chip">Rodas com pais e professores</span><span class="chip lilac">Apoio à Lei 13.935/2019</span><span class="chip lilac">Novas edições com indicadores</span>
+    </div>
+  </div>
+  <div class="foot" style="right:auto;width:900px"><span><b>●</b> Etapa 4</span><span>16 / 17</span></div>
+</section>
+
+<!-- 17 · REFERÊNCIAS -->
+<section class="s light" id="s16" data-g="5" data-title="Referências">
+  <div class="hd">
+    <p class="eyebrow r" style="--d:0">Fontes consultadas</p>
+    <h1 class="r" style="--d:1">Referências</h1>
+  </div>
+  <ol class="r" style="--d:2;columns:2;column-gap:80px;font-size:19px">
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">AFONSO, M. L. M.; ABADE, F. L. <b>Para reinventar as rodas</b>: rodas de conversa em direitos humanos. Belo Horizonte: RECIMAM, 2008.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">BRASIL. Decreto nº 6.286, de 5 de dezembro de 2007. Institui o Programa Saúde na Escola – PSE. Brasília, 2007.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">BRASIL. Lei nº 13.935, de 11 de dezembro de 2019. Dispõe sobre a prestação de serviços de psicologia e de serviço social nas redes públicas de educação básica. Disponível em: planalto.gov.br. Acesso em: 23 nov. 2026.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">BRASIL. Ministério da Saúde. Panorama dos suicídios e lesões autoprovocadas no Brasil de 2010 a 2021. <b>Boletim Epidemiológico</b>, v. 55, n. 4, 2024.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">CETIC.BR. <b>TIC Kids Online Brasil 2024</b>: principais resultados. São Paulo: CGI.br, 2025. Disponível em: cetic.br. Acesso em: 23 nov. 2026.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">CONSELHO FEDERAL DE PSICOLOGIA. <b>Referências técnicas para atuação de psicólogas(os) na educação básica</b>. 2. ed. Brasília: CFP, 2019.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">ERIKSON, E. H. <b>Identidade</b>: juventude e crise. 2. ed. Rio de Janeiro: Zahar, 1976.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">FREIRE, P. <b>Pedagogia da autonomia</b>: saberes necessários à prática educativa. São Paulo: Paz e Terra, 1996.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">IBGE. <b>Pesquisa Nacional de Saúde do Escolar</b>: 2019. Rio de Janeiro: IBGE, 2021. Acesso em: 23 nov. 2026.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">INSTITUTO AYRTON SENNA. <b>Saúde mental dos estudantes da rede estadual de São Paulo</b>. São Paulo: IAS; SEDUC-SP, 2022.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">KIELING, C. et al. Child and adolescent mental health worldwide: evidence for action. <b>The Lancet</b>, v. 378, n. 9801, p. 1515-1525, 2011.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">ORGANIZAÇÃO MUNDIAL DA SAÚDE. <b>Carta de Ottawa para a promoção da saúde</b>. Ottawa: OMS, 1986.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">ORGANIZAÇÃO PAN-AMERICANA DA SAÚDE. <b>Saúde mental dos adolescentes</b>. Disponível em: paho.org. Acesso em: 23 nov. 2026.</li>
+    <li style="font-size:22px;line-height:1.45;break-inside:avoid;margin-bottom:18px">ORGANIZAÇÃO DAS NAÇÕES UNIDAS. <b>Transformando nosso mundo</b>: a Agenda 2030 para o Desenvolvimento Sustentável. Nova York: ONU, 2015.</li>
+  </ol>
+  <div class="foot"><span>Fotos: Pexels (licença livre) · RDNE Stock project, Ibraim Leonardo e outros</span><span>17 / 17</span></div>
+</section>
+
+</main>
+
+<nav id="hud" aria-label="Navegação">
+  <button class="nb" id="prev" aria-label="Slide anterior"><svg><use href="#i-left"/></svg></button>
+  <div id="segs"></div>
+  <span id="pgn">01 / 17</span>
+  <button class="nb" id="next" aria-label="Próximo slide"><svg><use href="#i-right"/></svg></button>
+  <button class="nb" id="fs" aria-label="Tela cheia"><svg><use href="#i-full"/></svg></button>
+</nav>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const slides=$$('.s'),stage=$('#stage'),bg=$('#bg'),hudEl=$('#hud');
+const GROUPS=['Capa','Roteiro','Etapa 1','Etapa 2','Etapa 3','Etapa 4'];
+let cur=0,busy=false;
+
+/* grades de 100 pontos */
+$$('.grid').forEach(g=>{const n=+g.dataset.n;let h='';for(let j=0;j<100;j++)h+=`<i class="${j<n?'on':''}" style="--j:${j}"></i>`;g.innerHTML=h});
+
+/* escala do palco */
+let K=1;
+function fit(){K=Math.min(innerWidth/1920,innerHeight/1080);stage.style.setProperty('--k',K);sizeCanvas()}
+
+/* contagem dos números */
+function countUp(scope){
+  scope.querySelectorAll('[data-count]').forEach(el=>{
+    const to=+el.dataset.count,dec=+(el.dataset.dec||0),fmt=v=>v.toFixed(dec).replace('.',',');
+    if(reduced){el.textContent=fmt(to);return}
+    const st=performance.now(),d=1400,delay=500;el.textContent=fmt(0);
+    const tick=t=>{const p=Math.min(1,Math.max(0,(t-st-delay)/d)),e=1-Math.pow(1-p,4);el.textContent=fmt(to*e);if(p<1)requestAnimationFrame(tick)};
+    requestAnimationFrame(tick);
+  });
+}
+
+/* ---------- campo de pontos: cada ponto é um adolescente ---------- */
+const cv=$('#field'),ctx=cv.getContext('2d');let W=0,H=0,DPR=1;
+function sizeCanvas(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}
+const N=300,x=new Float32Array(N),y=new Float32Array(N),sx=new Float32Array(N),sy=new Float32Array(N),tx=new Float32Array(N),ty=new Float32Array(N),
+a=new Float32Array(N),ta=new Float32Array(N),fx=new Float32Array(N),fy=new Float32Array(N),spd=new Float32Array(N),ang=new Float32Array(N),rad=new Float32Array(N),
+t0=new Float32Array(N),dur=new Float32Array(N),mode=new Uint8Array(N),col=new Uint8Array(N);
+const PAL=['#FF6F59','#A99BFF','#4FD1B0','#FFD166','#F4F1FA','#12163A'];
+for(let i=0;i<N;i++){x[i]=Math.random()*innerWidth;y[i]=Math.random()*innerHeight;fx[i]=x[i];fy[i]=y[i];spd[i]=.4+Math.random();ang[i]=Math.random()*6.283;rad[i]=0;col[i]=i%4}
+let now=0,orbit={x:0,y:0},light=true;
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+function aim(i,m,X,Y,al,c,delay,d){sx[i]=x[i];sy[i]=y[i];mode[i]=m;tx[i]=X;ty[i]=Y;ta[i]=al;col[i]=c;t0[i]=now+delay;dur[i]=d}
+function toScreen(px,py){const r=stage.getBoundingClientRect();return[r.left+px*K,r.top+py*K]}
+function scene(i){
+  const s=slides[i];light=s.classList.contains('light');
+  const dim=light?.22:.34,base=light?5:4;
+  if(i===0){ // órbita nos anéis da capa
+    const[cx,cy]=toScreen(1920-120-650,-140+650);orbit={x:cx,y:cy};
+    for(let k=0;k<N;k++){rad[k]=(380+Math.random()*260)*K;const on=k<160;aim(k,2,0,0,on?(.25+Math.random()*.35):0,[0,1,5,5][k%4],Math.random()*.4,1.2)}
+    return}
+  if(s.dataset.dots){ // os pontos viram os gráficos
+    const dots=[...s.querySelectorAll('.grid i')];
+    dots.forEach((d,k)=>{if(k>=N)return;const r=d.getBoundingClientRect(),on=d.classList.contains('on');
+      const c=on?(k<100?1:k<200?3:0):4;aim(k,0,r.left+r.width/2,r.top+r.height/2,on?.95:.35,c,(k%100)*.004,.95)});
+    setTimeout(()=>{if(cur===i)for(let k=0;k<N;k++)ta[k]=0},1500);
+    return}
+  if(i===15){ // encerramento: pontos sobem
+    for(let k=0;k<N;k++){fx[k]=Math.random()*W*.5;fy[k]=H+Math.random()*H;aim(k,3,0,0,k<150?.5:0,k%4,Math.random()*.5,1)}
+    return}
+  if(i===14||i===1){const el=i===14?s.querySelector('[data-count="234"]'):s.querySelector('#route');const r=el.getBoundingClientRect();orbit={x:r.left+r.width/2,y:r.top+r.height/2};
+    for(let k=0;k<N;k++){rad[k]=(i===14?150+Math.random()*120:300+Math.random()*420)*K;aim(k,2,0,0,k<120?dim:0,k%4,Math.random()*.3,1.1)}
+    return}
+  for(let k=0;k<N;k++){fx[k]=x[k];fy[k]=y[k];aim(k,1,0,0,k<130?dim:0,light?base:k%4,Math.random()*.3,1.1)}
+}
+function frame(ms){
+  const T=ms/1000,dt=Math.min(.05,T-now||.016);now=T;
+  ctx.clearRect(0,0,W,H);
+  const r=Math.max(2.2,9*K);
+  for(let k=0;k<N;k++){
+    a[k]+=(ta[k]-a[k])*.08;if(a[k]<.01&&ta[k]<.01)continue;
+    let gx=tx[k],gy=ty[k];const m=mode[k];
+    if(m===1){const n=Math.sin(fx[k]*.003+T*.12)+Math.cos(fy[k]*.004-T*.1),th=n*1.8+ang[k]*.1;fx[k]+=Math.cos(th)*spd[k]*20*dt;fy[k]+=Math.sin(th)*spd[k]*20*dt;
+      if(fx[k]<-10)fx[k]=W+10;else if(fx[k]>W+10)fx[k]=-10;if(fy[k]<-10)fy[k]=H+10;else if(fy[k]>H+10)fy[k]=-10;gx=fx[k];gy=fy[k]}
+    else if(m===2){const th=ang[k]+T*.05*(.5+spd[k]);gx=orbit.x+Math.cos(th)*rad[k];gy=orbit.y+Math.sin(th)*rad[k]}
+    else if(m===3){fy[k]-=spd[k]*40*dt;if(fy[k]<-20){fy[k]=H+20;fx[k]=Math.random()*W*.5}gx=fx[k]+Math.sin(T+ang[k])*14;gy=fy[k]}
+    const p=reduced?1:Math.min(1,Math.max(0,(T-t0[k])/dur[k]));
+    if(p<1){const e=ease(p),bend=Math.sin(p*Math.PI)*36*Math.sin(ang[k]);x[k]=sx[k]+(gx-sx[k])*e-(gy-sy[k])/400*bend;y[k]=sy[k]+(gy-sy[k])*e+(gx-sx[k])/400*bend}
+    else{x[k]=gx;y[k]=gy}
+    ctx.globalAlpha=a[k];ctx.fillStyle=PAL[col[k]];ctx.beginPath();ctx.arc(x[k],y[k],m===0?r:r*.55,0,6.283);ctx.fill();
+  }
+  ctx.globalAlpha=1;requestAnimationFrame(frame);
+}
+
+/* ---------- navegação ---------- */
+$('#segs').innerHTML=GROUPS.map((t,g)=>`<button class="seg" data-g="${g}" aria-label="${t}"><i></i><b></b><span>${t}</span></button>`).join('');
+$$('.seg').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const g=+b.dataset.g;go(slides.findIndex(s=>+s.dataset.g===g))}));
+function hud(){
+  const g=+slides[cur].dataset.g;
+  $$('.seg').forEach((b,k)=>{const idx=slides.map((s,j)=>+s.dataset.g===k?j:-1).filter(j=>j>=0);
+    const f=k<g?1:k>g?0:(idx.indexOf(cur)+1)/idx.length;b.querySelector('b').style.width=(f*100)+'%'});
+  $('#pgn').textContent=String(cur+1).padStart(2,'0')+' / '+slides.length;
+  hudEl.classList.toggle('light',slides[cur].classList.contains('light'));
+}
+const GLOW=[[78,28],[50,50],[30,40],[70,30],[50,60],[50,45],[25,50],[70,35],[50,40],[60,30],[50,50],[30,60],[75,40],[50,30],[50,50],[30,50],[50,50]];
+function go(i){
+  i=Math.max(0,Math.min(slides.length-1,i));if(busy||i===cur&&slides[i].classList.contains('in'))return;
+  const prev=cur;cur=i;
+  const show=()=>{
+    slides.forEach((s,k)=>{s.classList.toggle('active',k===i);s.classList.remove('in')});
+    void slides[i].offsetWidth;slides[i].classList.add('in');
+    bg.classList.toggle('light',slides[i].classList.contains('light'));
+    const[gx,gy]=GLOW[i]||[50,50],lt=slides[i].classList.contains('light');
+    $('#glow').style.background=`radial-gradient(38% 42% at ${gx}% ${gy}%,${lt?'rgba(169,155,255,.22)':'rgba(169,155,255,.16)'},transparent 70%)`;
+    countUp(slides[i]);requestAnimationFrame(()=>scene(i));hud();
+  };
+  if(prev===0&&i>0&&!reduced){ // íris: a tinta se abre a partir do foco da capa
+    busy=true;const[cx,cy]=toScreen(1920-150-300,120+390),ir=$('#iris');
+    const R=Math.hypot(Math.max(cx,innerWidth-cx),Math.max(cy,innerHeight-cy))/2+20;
+    ir.style.left=cx+'px';ir.style.top=cy+'px';ir.style.opacity=1;
+    ir.animate([{transform:'scale(0)'},{transform:`scale(${R})`}],{duration:850,easing:'cubic-bezier(.7,0,.2,1)',fill:'forwards'}).onfinish=()=>{
+      show();ir.animate([{opacity:1},{opacity:0}],{duration:420,fill:'forwards'}).onfinish=()=>{ir.getAnimations().forEach(a=>a.cancel());ir.style.opacity=0;busy=false}};
+    return}
+  show();busy=true;setTimeout(()=>busy=false,reduced?50:300);
+}
+const next=()=>go(cur+1),prev=()=>go(cur-1);
+$('#next').addEventListener('click',e=>{e.stopPropagation();next()});
+$('#prev').addEventListener('click',e=>{e.stopPropagation();prev()});
+$('#fs').addEventListener('click',e=>{e.stopPropagation();const d=document.documentElement;try{document.fullscreenElement?document.exitFullscreen():d.requestFullscreen().catch(()=>{})}catch(_){}});
+addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();next()}else if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();prev()}else if(e.key==='Home')go(0);else if(e.key==='End')go(slides.length-1)});
+addEventListener('click',e=>{if(e.target.closest('#hud'))return;(e.clientX<innerWidth*.3?prev:next)()});
+let tsX=null;addEventListener('touchstart',e=>{tsX=e.touches[0].clientX},{passive:true});
+addEventListener('touchend',e=>{if(tsX==null)return;const dx=e.changedTouches[0].clientX-tsX;if(Math.abs(dx)>40)(dx<0?next:prev)();tsX=null});
+let idleT;const wake=()=>{document.body.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>document.body.classList.add('idle'),2600)};
+addEventListener('mousemove',wake);
+addEventListener('resize',()=>{fit();scene(cur)});
+
+fit();
+slides[0].classList.add('active');
+requestAnimationFrame(()=>{slides[0].classList.add('in');scene(0);hud()});
+requestAnimationFrame(frame);wake();
+})();
+</script>
+</body></html>
